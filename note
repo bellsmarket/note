@@ -1,0 +1,270 @@
+#!/bin/bash
+
+####################################################
+# Script name : note
+# Discription :note your knowledge
+# How to : # note
+#     $1 : filename
+#     $2 : -
+#     Example: # note $1
+# Date : 2021/03/29
+# @copyright  2021 Bell's market <bellsmarketweb+github@gmail.com>
+# @see       https://github.com/bellsmarket
+####################################################
+
+source "$HOME/dotfiles/bin/lib/_variable_color.sh"
+NOTE_DIR="$HOME/ghq/github.com/bellsmarket/.note"
+
+# usage {{{
+function usage {
+  cat <<EOM
+Usage: $(basename "$0") \$fileName [OPTION]...
+  編集中の内容の検索 => ripで"WIP Work In Progress"を検索
+  リマインダーの内容の検索 =>    ripで"Reminder"を検索!!
+  -c                Create New Manual.
+  -e                Edit Note-file.
+  -h                Display help
+  -g                Push noteFile to github
+  -k                Keyword Search
+  -l                Show Note list.
+  -r                Remove Note-file
+  -p                Pull Note Library
+EOM
+  exit 3
+}
+# }}}
+
+
+# Option -c
+# New Create Manual-File {{{
+function create_note() {
+  #info "create_note"
+  if [[ -f "${NOTE_DIR}/${OPTARG}" ]]; then
+    warn "${OPTARG}.md is Exists."
+    warn "Would you like want to read 【${OPTARG}】? y yes /n no"
+    read -r str
+    case "$str" in		#変数strの内容で分岐
+      [Yy]|[Yy][Ee][Ss])
+        read_note "${OPTARG}"
+        ;;
+      [Nn]|[Nn][Oo])
+        success "Note finished."
+        exit 120
+        ;;
+      *)
+        success "Note finished."
+        exit 120
+        ;;
+    esac
+    exit 120
+  else
+    touch "${NOTE_DIR}/${OPTARG}.md"
+    echo "# ${OPTARG}"  >> "${NOTE_DIR}/${OPTARG}.md"
+
+    echo "## Table of Contents" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- Description" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- Header 01" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- Header 02" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- Header 03" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- 参考サイト" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- トラブルシューティング" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "" >> "${NOTE_DIR}/${OPTARG}.md"
+
+    echo "## Description" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "" >> "${NOTE_DIR}/${OPTARG}.md"
+
+    echo "## Header 01" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "" >> "${NOTE_DIR}/${OPTARG}.md"
+
+    echo "## Header 02" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "" >> "${NOTE_DIR}/${OPTARG}.md"
+
+    echo "## Header 03" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "" >> "${NOTE_DIR}/${OPTARG}.md"
+
+    echo "## 参考サイト" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- [サイトA](https://sample.com) " >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- [サイトB](https://sample.com) " >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "- [サイトC](https://sample.com) " >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "" >> "${NOTE_DIR}/${OPTARG}.md"
+
+    echo "## トラブルシューティング" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "### ケースA" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "### ケースB" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "### ケースC" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "" >> "${NOTE_DIR}/${OPTARG}.md"
+    echo "Create: $(date "+%Y-%m-%d %H:%M:%S")" >> "${NOTE_DIR}/${OPTARG}.md"
+    $(which nvim) "${NOTE_DIR}/${OPTARG}.md"
+    success "Create ${OPTARG} -->> 編集を終了しました。"
+    return 0
+  fi
+  exit 120
+}
+#}}}
+
+# Option -e
+# edit_manual {{{
+  function edit_manual() {
+    $(which nvim) "${NOTE_DIR}/${OPTARG}"
+    echo "${OPTARG} -->> 編集を終了しました。"
+    exit 4
+  }
+# }}}
+
+# Option -l
+# get_list {{{
+  function get_list() {
+    find "${NOTE_DIR}" -type f -name "*.md" -maxdepth 1 -exec basename {} \;
+    exit 2
+  }
+# }}}
+
+# Option -k
+# search_Keyword {{{
+function search_Keyword() {
+  success "${OPTARG}"
+  ggrep -nR --color="auto" "${OPTARG}" "$NOTE_DIR/*.md"
+  exit 1
+}
+#}}}
+
+# pull_note_from_github {{{
+function pull_note_from_github {
+  if [[ -d $NOTE_DIR ]]; then
+    if [[ -z $NOTE_DIR ]]; then
+      info "Download Note Data from Github.com"
+      git clone git@github.com:bellsmarket/.note.git "$NOTE_DIR"
+      exit 1
+    fi
+  else
+    info "Create Manual Directory."
+    mkdir -p "$NOTE_DIR"
+    info "Download Note Data from Github.com"
+    git clone git@github.com:bellsmarket/.note.git "$NOTE_DIR"
+    exit 1
+  fi
+  return 0
+}
+#}}}
+
+# Push_to_git *.md
+function push_to_git_bulkdata() {
+  cd "$NOTE_DIR"
+  git add "*.md"
+  git commit -m "update"
+  git push
+  exit 120
+}
+
+
+function open_atom_editor(){
+  atom "$NOTE_DIR"
+  exit 120
+}
+
+function open_typora_editor(){
+  open -a typora "$NOTE_DIR"
+  exit 120
+}
+
+function open_boostnote() {
+  open -a boostnote "$NOTE_DIR"
+  exit 120
+}
+
+# get_option_arg {{{
+function get_option_arg() {
+  # 数別の処理定義
+  # getopts :　
+  # 最初の【:】がある =>> エラーを吐かない。指定していないオプション or オプションに引数がない際に
+  #       【:】がない =>> エラーを吐く。
+
+  #<str>: 後ろにコロンある場合は引数をとる = ${OPTARG}を使う
+#  -c                 Create New Manual.
+#  -e                 Edit Note-file.
+#  -h                 Display help
+#  -k                 Keyword Search
+#  -l                 Show Note list.
+#  -r                 Remove Note-file
+#  -p                 Pull Note Library
+#  -t                 Edit Note for Typora
+
+  while getopts abc:e:ghk:ltp OPT
+  do
+    case "$OPT" in
+      a)
+        open_atom_editor
+      ;;
+      b)
+        open_boostnote
+      ;;
+      c)
+        create_note "${OPTARG}"
+      ;;
+      e)
+        edit_manual "${OPTARG}"
+      ;;
+      g)
+        push_to_git_bulkdata
+      ;;
+      h)
+        usage
+      ;;
+      k)
+        search_Keyword "${OPTARG}"
+      ;;
+      l)
+        get_list
+      ;;
+      p)
+        pull_note_from_github
+      ;;
+      t)
+        open_typora_editor
+      ;;
+      *)
+        echo "illegal option -- $OPTARG."
+        echo "usage is -h option."
+        exit 1
+      ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+}
+# }}}
+
+
+# read_note {{{
+function read_note() {
+  if [[ $# -gt 1 ]]; then
+    error  "Expected 1 arguments, but got $#."
+  elif [[ $# -gt 0 ]]; then
+    if [[ -f "$NOTE_DIR/$1" ]]; then
+      glow "$NOTE_DIR/$1"
+    else
+      error "$1 is not Exists."
+      exit 1
+    fi
+  else
+    warn "Expected 1 arguments(md), but got $#."
+    info "e.x note bash.md"
+    exit 20
+  fi
+  info "${1} was closed"
+}
+# }}}
+
+
+
+#main {{{
+function main() {
+  # get_list
+  pull_note_from_github
+  get_option_arg "$@"
+  read_note "$@"
+  success "Note finished."
+  return 0
+}
+# }}}
+
+main "$@"
