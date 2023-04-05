@@ -31,7 +31,7 @@ Usage: $(basename "$0") \$fileName [OPTION]...
   -r                Remove Note-file
   -p                Pull Note Library
 EOM
-  exit 3
+exit 3
 }
 # }}}
 
@@ -105,26 +105,33 @@ function create_note() {
 
 # Option -e
 # edit_manual {{{
-  function edit_manual() {
-    $(which nvim) "${NOTE_DIR}/${OPTARG}"
-    echo "${OPTARG} -->> 編集を終了しました。"
-    exit 4
-  }
+function edit_manual() {
+  $(which nvim) "${NOTE_DIR}/${OPTARG}"
+  echo "${OPTARG} -->> 編集を終了しました。"
+  exit 4
+}
 # }}}
 
 # Option -l
 # get_list {{{
-  function get_list() {
-    find "${NOTE_DIR}" -type f -name "*.md" -maxdepth 1 -exec basename {} \;
-    exit 2
-  }
+function get_list() {
+  find "${NOTE_DIR}" -type f -name "*.md" -maxdepth 1 -exec basename {} \;
+  exit 2
+}
 # }}}
 
 # Option -k
 # search_Keyword {{{
 function search_Keyword() {
-  success "${OPTARG}"
-  ggrep -nR --color="auto" "${OPTARG}" "$NOTE_DIR/*.md"
+  local arg="${1}"
+
+  if [ -x "/opt/homebrew/bin/rg" ]; then
+    success "$arg"
+    cd "${NOTE_DIR}" || exit
+    /opt/homebrew/bin/rg  -i "${arg}" ${NOTE_DIR}/*.md
+  else
+    ggrep -nR --color="auto" "${arg}" "$NOTE_DIR/*.md"
+  fi
   exit 1
 }
 #}}}
@@ -181,53 +188,53 @@ function get_option_arg() {
   #       【:】がない =>> エラーを吐く。
 
   #<str>: 後ろにコロンある場合は引数をとる = ${OPTARG}を使う
-#  -c                 Create New Manual.
-#  -e                 Edit Note-file.
-#  -h                 Display help
-#  -k                 Keyword Search
-#  -l                 Show Note list.
-#  -r                 Remove Note-file
-#  -p                 Pull Note Library
-#  -t                 Edit Note for Typora
+  #  -c                 Create New Manual.
+  #  -e                 Edit Note-file.
+  #  -h                 Display help
+  #  -s                Keyword Search
+  #  -l                 Show Note list.
+  #  -r                 Remove Note-file
+  #  -p                 Pull Note Library
+  #  -t                 Edit Note for Typora
 
-  while getopts abc:e:ghk:ltp OPT
+  while getopts abc:e:ghs:ltp OPT
   do
     case "$OPT" in
       a)
         open_atom_editor
-      ;;
+        ;;
       b)
         open_boostnote
-      ;;
+        ;;
       c)
         create_note "${OPTARG}"
-      ;;
+        ;;
       e)
         edit_manual "${OPTARG}"
-      ;;
+        ;;
       g)
         push_to_git_bulkdata
-      ;;
+        ;;
       h)
         usage
-      ;;
-      k)
+        ;;
+      s)
         search_Keyword "${OPTARG}"
-      ;;
+        ;;
       l)
         get_list
-      ;;
+        ;;
       p)
         pull_note_from_github
-      ;;
+        ;;
       t)
         open_typora_editor
-      ;;
+        ;;
       *)
         echo "illegal option -- $OPTARG."
         echo "usage is -h option."
         exit 1
-      ;;
+        ;;
     esac
   done
   shift $((OPTIND - 1))
