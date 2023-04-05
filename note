@@ -124,10 +124,10 @@ function get_list() {
 # search_Keyword {{{
 function search_Keyword() {
   local arg="${1}"
-
   if [ -x "/opt/homebrew/bin/rg" ]; then
-    success "$arg"
-    cd "${NOTE_DIR}" || exit
+    success "検索ワード => $arg"
+    echo ""
+
     /opt/homebrew/bin/rg  -i "${arg}" ${NOTE_DIR}/*.md
   else
     ggrep -nR --color="auto" "${arg}" "$NOTE_DIR/*.md"
