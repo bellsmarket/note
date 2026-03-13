@@ -25,14 +25,18 @@ try:
         3: ("    ⏺", "bold blue"),
     }
 
-    _TABLE_SEP = re.compile(r'^\|[\s\|\-:]+\|?\s*$')
+    # | 有無両方のセパレータ行にマッチ: |---|---| または ---|---
+    _TABLE_SEP = re.compile(r'^[\|\s]*[\-:]+[\-:\|\s]*$')
+
+    def _is_table_sep(line: str) -> bool:
+        return bool(_TABLE_SEP.match(line)) and '-' in line
 
     def _parse_md_table(lines):
         """Markdown テーブル行を rich Table (SQUARE box) に変換"""
         def split_row(line):
             return [c.strip() for c in line.strip().strip('|').split('|')]
 
-        sep_idx = next((i for i, l in enumerate(lines) if _TABLE_SEP.match(l)), 1)
+        sep_idx = next((i for i, l in enumerate(lines) if _is_table_sep(l)), 1)
         headers = split_row(lines[0])
         data_rows = [split_row(l) for l in lines[sep_idx + 1:] if l.strip()]
 
