@@ -4,18 +4,92 @@ import subprocess
 from datetime import datetime
 
 try:
-    from rich.console import Console
+    import re
+    from rich import box as rich_box
+    from rich.console import Console, Group
     from rich.markdown import Markdown
     from rich.panel import Panel
+    from rich.table import Table as RichTable
+    from rich.text import Text
     from rich.theme import Theme
+
     _console = Console(theme=Theme({
-        "markdown.h1": "bold white",
-        "markdown.h2": "bold cyan",
-        "markdown.h3": "bold blue",
         "markdown.code": "bright_black on grey23",
         "markdown.code_block": "bright_black on grey23",
         "markdown.link": "cyan underline",
     }))
+
+    _HEADING_STYLES = {
+        1: ("⏺", "bold cyan"),
+        2: ("  ⏺", "bold green"),
+        3: ("    ⏺", "bold blue"),
+    }
+
+    _TABLE_SEP = re.compile(r'^\|[\s\|\-:]+\|?\s*$')
+
+    def _parse_md_table(lines):
+        """Markdown テーブル行を rich Table (SQUARE box) に変換"""
+        def split_row(line):
+            return [c.strip() for c in line.strip().strip('|').split('|')]
+
+        sep_idx = next((i for i, l in enumerate(lines) if _TABLE_SEP.match(l)), 1)
+        headers = split_row(lines[0])
+        data_rows = [split_row(l) for l in lines[sep_idx + 1:] if l.strip()]
+
+        t = RichTable(box=rich_box.SQUARE, show_lines=True, header_style="bold")
+        for h in headers:
+            t.add_column(h)
+        for row in data_rows:
+            padded = row + [''] * max(0, len(headers) - len(row))
+            t.add_row(*padded[:len(headers)])
+        return t
+
+    def _render_claude_style(content: str):
+        """見出し・テーブルを Claude スタイルで描画、それ以外は Markdown に委譲"""
+        parts = []
+        buf = []
+        table_buf = []
+        in_code = False
+
+        def flush_buf():
+            if buf:
+                parts.append(Markdown('\n'.join(buf)))
+                buf.clear()
+
+        def flush_table():
+            if table_buf:
+                parts.append(_parse_md_table(table_buf))
+                table_buf.clear()
+
+        for line in content.split('\n'):
+            if line.startswith('```'):
+                in_code = not in_code
+
+            if not in_code:
+                if line.startswith('|'):
+                    flush_buf()
+                    table_buf.append(line)
+                    continue
+                else:
+                    flush_table()
+
+                m = re.match(r'^(#{1,3})\s+(.+)', line)
+                if m:
+                    flush_buf()
+                    level = len(m.group(1))
+                    symbol, style = _HEADING_STYLES.get(level, ("⏺", "bold white"))
+                    t = Text()
+                    t.append(f"{symbol} ", style=style)
+                    t.append(m.group(2), style=style)
+                    parts.append(t)
+                    continue
+
+            buf.append(line)
+
+        flush_table()
+        flush_buf()
+        return Group(*parts)
+
     _HAS_RICH = True
 except ImportError:
     _HAS_RICH = False
@@ -62,7 +136,7 @@ def read_note(file_name):
         base = os.path.splitext(os.path.basename(file_path))[0]
         _console.print()
         _console.print(Panel(
-            Markdown(content),
+            _render_claude_style(content),
             title=f"[bold cyan]{base}[/bold cyan]",
             border_style="cyan",
             padding=(1, 2),
