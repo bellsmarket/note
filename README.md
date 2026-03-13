@@ -304,7 +304,52 @@ note -s "docker|kubernetes"
 
 ---
 
-## ビルド（PyInstaller）
+## デプロイ
+
+### 構成
+
+```
+~/ghq/github.com/bellsmarket/note/
+├── note        ← bash スクリプト（エントリポイント）
+├── main.py     ← Python 実装（レンダリング等）
+└── main.spec   ← PyInstaller ビルド定義
+
+~/bin/note → ~/ghq/github.com/bellsmarket/note/note  (symlink)
+```
+
+### main.py を修正した場合
+
+`note` bash スクリプトが `python3 main.py` を直接呼ぶため、**修正後に即反映される**。ビルド不要。
+
+```bash
+# 修正して動作確認するだけでOK
+vim main.py
+note -r myfile
+```
+
+### note（bash スクリプト）を修正した場合
+
+シンボリックリンク経由で直接参照されているため、こちらも**即反映**される。
+
+```bash
+vim note
+note -e myfile
+```
+
+### zsh 補完を修正した場合
+
+補完キャッシュの再生成が必要。
+
+```bash
+vim /Users/Shared/dotfiles/zsh/completion/_note
+rm -f ~/.zcompdump
+# 新しいターミナルを開く（または exec zsh）
+exec zsh
+```
+
+### PyInstaller でスタンドアロンバイナリをビルドする場合
+
+`python3` に依存しない単体バイナリが必要な場合のみ。
 
 ```bash
 pip install pyinstaller rich
