@@ -2,14 +2,31 @@
 
 ####################################################
 # Script name : note
-# Discription :note your knowledge
-# How to : # note
-#     $1 : filename
-#     $2 : -
-#     Example: # note $1
-# Date : 2021/03/29
+# Description : Terminal-based knowledge management CLI
+# Version     : 2.0.0
+# Date        : 2021/03/29 (rewritten 2026/03/14)
 # @copyright  2021 Bell's market <bellsmarketweb+github@gmail.com>
-# @see       https://github.com/bellsmarket
+# @see        https://github.com/bellsmarket
+#
+# Usage:
+#   note <filename>           Read note (if exists) or create new
+#   note -c <name>            Create new note and open in nvim
+#   note -e <name>            Edit existing note in nvim
+#   note -r <name>            Render note with rich (Claude style)
+#   note -l                   List all notes
+#   note -s <query>           Search notes (rg / grep fallback)
+#   note -p                   Pull notes from GitHub
+#   note --push [msg]         Push notes to GitHub
+#   note --open <editor>      Open note dir in GUI editor
+#
+# Editors: obsidian / typora / pulsar / boostnote
+#
+# Tips:
+#   Search WIP    : note -s "WIP"
+#   Search remind : note -s "Reminder"
+#
+# Note: This script is a thin wrapper around main.py (Python 3).
+#       All logic lives in main.py. Edit that file to change behavior.
 ####################################################
 
 SCRIPT="${BASH_SOURCE[0]}"
