@@ -11,7 +11,11 @@
 # @copyright  2021 Bell's market <bellsmarketweb+github@gmail.com>
 # @see       https://github.com/bellsmarket
 ####################################################
-source "$HOME/dotfiles/bin/lib/_variable_color.sh"
+if [[ -f "/Users/Shared/dotfiles/bin/lib/_variable_color.sh" ]]; then
+    source "/Users/Shared/dotfiles/bin/lib/_variable_color.sh"
+else
+    source "$HOME/dotfiles/bin/lib/_variable_color.sh"
+fi
 NOTE_DIR="$HOME/ghq/github.com/bellsmarket/.note"
 GIT_REPO="git@github.com:bellsmarket/.note.git"
 
@@ -101,11 +105,19 @@ function get_option_arg() {
 }
 # }}}
 
+# .md 拡張子がなければ補完する
+function _note_path() {
+    local name="$1"
+    [[ "$name" != *.md ]] && name="${name}.md"
+    echo "${NOTE_DIR}/${name}"
+}
+
 # Option -c
 # New Create Manual-File {{{
 function create_note() {
   #info "create_note"
-  if [[ -f "${NOTE_DIR}/${OPTARG}" ]]; then
+  local TARGET_PATH; TARGET_PATH=$(_note_path "${OPTARG}")
+  if [[ -f "$TARGET_PATH" ]]; then
     warn "${OPTARG}.md is Exists."
     warn "Would you like want to read 【${OPTARG}】? y yes /n no"
     read -r str
@@ -124,8 +136,8 @@ function create_note() {
     esac
     exit 120
   else
-    touch "${NOTE_DIR}/${OPTARG}.md"
-    TARGET_FILE="${NOTE_DIR}/${OPTARG}.md"
+    touch "$TARGET_PATH"
+    TARGET_FILE="$TARGET_PATH"
 
     {
         echo "# ${OPTARG}";
@@ -165,7 +177,7 @@ function create_note() {
     } >> "$TARGET_FILE";
 
      
-    $(which nvim) "${NOTE_DIR}/${OPTARG}.md"
+    $(which nvim) "$TARGET_PATH"
     success "Create ${OPTARG} -->> 編集を終了しました。"
     return 0
   fi
@@ -175,7 +187,7 @@ function create_note() {
 # Option -e
 # edit_manual {{{
 function edit_manual() {
-$(which nvim) "${NOTE_DIR}/${OPTARG}"
+$(which nvim) "$(_note_path "${OPTARG}")"
 echo "${OPTARG} -->> 編集を終了しました。"
 exit 4
 }
@@ -260,8 +272,9 @@ function read_note() {
     if [[ $# -gt 1 ]]; then
         error  "Expected 1 arguments, but got $#."
     elif [[ $# -gt 0 ]]; then
-        if [[ -f "$NOTE_DIR/$1" ]]; then
-            glow "$NOTE_DIR/$1"
+        local note_path; note_path=$(_note_path "$1")
+        if [[ -f "$note_path" ]]; then
+            python3 "$(dirname "${BASH_SOURCE[0]}")/main.py" -r "$1"
         else
             error "$1 is not Exists."
             exit 1
