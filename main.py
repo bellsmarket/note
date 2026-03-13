@@ -122,9 +122,22 @@ def create_note(file_name):
             subprocess.run(['nvim', file_path])
     else:
         with open(file_path, 'w') as f:
-            f.write(f"---\ndescription: \ncreated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n---\n\n")
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f"---\ndescription: \ncreated: {now}\n---\n\n")
             f.write(f"# {base}\n\n")
-            f.write("## Table of Contents\n- Description\n- Header 01\n- Header 02\n\n")
+            f.write("## Table of Contents\n")
+            f.write("- Description\n- Header 01\n- Header 02\n- Header 03\n")
+            f.write("- 参考サイト\n- トラブルシューティング\n\n")
+            f.write("## Description\n\n")
+            f.write("## Header 01\n\n")
+            f.write("## Header 02\n\n")
+            f.write("## Header 03\n\n")
+            f.write("## 参考サイト\n")
+            f.write("- [サイトA](https://sample.com)\n")
+            f.write("- [サイトB](https://sample.com)\n\n")
+            f.write("## トラブルシューティング\n")
+            f.write("### ケースA\n\n")
+            f.write("### ケースB\n\n")
         print(f"Created: {base}.md")
         subprocess.run(['nvim', file_path])
 
@@ -271,8 +284,11 @@ Examples:
     elif args.open:
         open_editor(args.open)
     elif args.filename:
-        # 引数だけ渡された場合は作成 or 編集
-        create_note(args.filename)
+        # 引数だけの場合: 存在すれば読む、なければ作る
+        if os.path.exists(_note_path(args.filename)):
+            read_note(args.filename)
+        else:
+            create_note(args.filename)
     else:
         parser.print_help()
 
